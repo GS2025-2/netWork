@@ -10,17 +10,16 @@
     "generate-profiles": "node ./src/generateProfiles.js"
   },
   "dependencies": {
+    "@tailwindcss/vite": "^4.1.17",
+    "faker": "^5.5.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.22.3",
     "recharts": "^2.8.0",
-    "faker": "^5.5.3"
+    "tailwindcss": "^4.1.17"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.2",
-    "autoprefixer": "^10.4.20",
-    "postcss": "^8.4.41",
-    "tailwindcss": "^3.4.13",
     "vite": "^5.4.6"
   }
 }

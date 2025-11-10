@@ -1,7 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 :root {
   --linkedin-blue: #0a66c2;
   --linkedin-light: #f3f2ef;
