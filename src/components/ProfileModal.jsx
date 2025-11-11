@@ -130,7 +130,7 @@ export default function ProfileModal({ profile, onClose }) {
 
               {/* 🧘‍♂️ Botão de Bem-Estar */}
               <button onClick={toggleWellness} className="btn-secondary">
-                Bem-Estar
+                Bem-Estar do Ambiente
               </button>
             </div>
           </div>
