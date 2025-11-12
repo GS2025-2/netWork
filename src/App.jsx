@@ -6,34 +6,30 @@ import SearchFilters from './components/SearchFilters'
 import DarkModeToggle from './components/DarkModeToggle'
 import { getInitialTheme, setTheme } from './utils/localStorageTheme'
 
-// Constante de tempo para detecção de estagnação (20 segundos)
+// Tempo máximo antes de considerar que os dados estão "parados" (20 segundos)
 const STALE_THRESHOLD = 20000; 
 
-// Objeto de dados fictícios/fallback
+// Dados fictícios exibidos quando os sensores estão desligados
 const DADOS_FICTICIOS_FALLBACK = {
     temperatura: null, 
     luminosidade: null,
     som: null,
     status: 'Dados fictícios, sensores desligados',
-    isFallback: true, // Flag de identificação
+    isFallback: true,
 };
 
-// Função auxiliar para comparação de valores flutuantes com tolerância.
+// Função para comparar valores numéricos com uma pequena margem de erro
 const isCloseTo = (v1, v2, tolerance = 0.1) => {
     if (v1 === null || v2 === null) return v1 === v2;
-    // Garante que ambos são números antes de calcular a diferença
     if (typeof v1 !== 'number' || typeof v2 !== 'number') return false; 
     return Math.abs(v1 - v2) < tolerance;
 };
 
-// Função auxiliar para comparação de dados relevantes (ignorando pequenas variações de ruído)
+// Compara dois conjuntos de dados dos sensores, ignorando pequenas variações
 const areSameData = (d1, d2) => {
     if (!d1 || !d2) return d1 === d2;
     
-    // Compara strings e a flag isFallback
     const stringsMatch = d1.status === d2.status && !!d1.isFallback === !!d2.isFallback;
-    
-    // Compara números com tolerância (ruído será ignorado)
     const numbersMatch = isCloseTo(d1.temperatura, d2.temperatura) &&
                          isCloseTo(d1.luminosidade, d2.luminosidade) &&
                          isCloseTo(d1.som, d2.som);
@@ -49,9 +45,9 @@ export default function App() {
   const [filters, setFilters] = useState({ area: '', localizacao: '' })
   const [theme, setThemeState] = useState(getInitialTheme())
   const [dadosSensores, setDadosSensores] = useState(DADOS_FICTICIOS_FALLBACK) 
-  const [ultimoUpdate, setUltimoUpdate] = useState(Date.now()) // Tempo da última leitura DIFERENTE
+  const [ultimoUpdate, setUltimoUpdate] = useState(Date.now()) // Guarda o momento da última atualização real
 
-  // === Tema claro/escuro ===
+  // Alterna entre modo claro e escuro
   useEffect(() => {
     const root = document.documentElement
     if (theme === 'dark') root.classList.add('dark')
@@ -59,7 +55,7 @@ export default function App() {
     setTheme(theme)
   }, [theme])
 
-  // === Carregar perfis locais ===
+  // Carrega os perfis locais do arquivo JSON
   useEffect(() => {
     fetch('/data/profiles.json')
       .then((r) => r.json())
@@ -68,7 +64,7 @@ export default function App() {
       .finally(() => setLoading(false))
   }, [])
 
-  // === Atualizar campo "bemEstar" com dados do Node-RED (Lógica Robusta de Estagnação) ===
+  // Atualiza os dados dos sensores (vindo do Node-RED) com verificação de estagnação
   useEffect(() => {
     async function atualizarBemEstar() {
       let novosDadosSensores = DADOS_FICTICIOS_FALLBACK;
@@ -87,22 +83,20 @@ export default function App() {
           throw new Error('JSON inválido ou vazio recebido.')
         }
 
-        // Sucesso: Mapeia os dados reais e FORÇA CONVERSÃO PARA FLOAT
+        // Converte todos os valores para número e trata o texto de status
         novosDadosSensores = {
-            // Conversão para parseFloat é CRUCIAL para garantir que a comparação funcione.
             temperatura: parseFloat(sensores.temperatura) ?? null, 
             luminosidade: parseFloat(sensores.luminosidade) ?? null,
             som: parseFloat(sensores.som) ?? null,
             status: sensores.status && sensores.status.trim() !== ''
               ? sensores.status
               : 'Ambiente não identificado',
-            isFallback: false, // Flag de dados reais
+            isFallback: false,
         };
         success = true;
         
       } catch (error) {
-        console.warn('Falha na comunicação ou dados inválidos (Rede/Formato):', error.message)
-        // Se a requisição falhou, usamos o Fallback
+        console.warn('Erro na comunicação ou dados inválidos:', error.message)
         novosDadosSensores = DADOS_FICTICIOS_FALLBACK;
       }
 
@@ -110,42 +104,35 @@ export default function App() {
       const isCurrentlyReal = dadosSensores && dadosSensores.temperatura !== null;
       const timeElapsed = Date.now() - ultimoUpdate;
 
-      // 1. LÓGICA DE ESTAGNAÇÃO (STALE DATA):
-      // Se a requisição foi um sucesso, mas os DADOS são os mesmos que os anteriores (dataHasChanged=false, ignorando ruído),
-      // E já passou mais de 20 segundos (STALE_THRESHOLD) desde a última leitura,
-      // ENTÃO, assumimos que o Node-RED está enviando dados obsoletos.
+      // Se os dados não mudam por muito tempo, assume que estão estagnados e volta pro modo fictício
       if (success && !dataHasChanged && isCurrentlyReal && timeElapsed > STALE_THRESHOLD) {
-        console.warn(`Estagnação de dados detectada (> ${STALE_THRESHOLD / 1000}s sem mudança real). Forçando Fallback.`);
+        console.warn(`Dados estagnados por mais de ${STALE_THRESHOLD / 1000}s. Voltando para dados fictícios.`);
         setDadosSensores(DADOS_FICTICIOS_FALLBACK);
         return; 
       }
       
-      // 2. LÓGICA DE ATUALIZAÇÃO (DADOS NOVOS OU FALHA/RECONEXÃO):
-      // Só atualizamos o estado se os dados realmente mudaram.
+      // Atualiza apenas se houve mudança real ou reconexão
       if (dataHasChanged) {
         setDadosSensores(novosDadosSensores);
-        // Se a atualização foi bem-sucedida E diferente da anterior, marcamos o tempo.
         if (success) {
             setUltimoUpdate(Date.now());
         }
       }
     }
 
-    // Tenta atualizar a cada 5 segundos
+    // Atualiza a cada 5 segundos
     const interval = setInterval(atualizarBemEstar, 5000)
-    // Chamada inicial
     atualizarBemEstar() 
     return () => clearInterval(interval)
   }, [dadosSensores, ultimoUpdate]) 
 
-  // === Atualiza os perfis com os dados dos sensores ===
+  // Associa os dados dos sensores a cada perfil
   const perfisComBemEstar = profiles.map((p) => ({
     ...p,
-    // O estado 'dadosSensores' já contém a leitura mais atual OU o DADOS_FICTICIOS_FALLBACK.
     bemEstar: dadosSensores, 
   }))
 
-  // === Filtros e pesquisa ===
+  // Aplica filtros e pesquisa
   const filtered = perfisComBemEstar.filter((p) => {
     const matchQuery = [p.nome, p.cargo, (p.habilidadesTecnicas || []).join(' ')].join(' ').toLowerCase().includes(query.toLowerCase())
     const matchArea = filters.area ? p.area === filters.area : true
@@ -153,7 +140,7 @@ export default function App() {
     return matchQuery && matchArea && matchLoc
   })
 
-  // === Modal e renderização ===
+  // Controle do modal
   const openProfile = (profile) => setSelected(profile)
   const closeProfile = () => setSelected(null)
 
