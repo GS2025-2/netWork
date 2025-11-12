@@ -148,9 +148,18 @@ export default function App() {
     <div className="min-h-screen bg-[color:var(--linkedin-light)] dark:bg-[color:var(--linkedin-dark)]">
       <Header />
       <div className="container py-6">
-        <div className="flex justify-between items-center mb-4">
-          <SearchFilters query={query} setQuery={setQuery} filters={filters} setFilters={setFilters} profiles={perfisComBemEstar} />
-          <DarkModeToggle theme={theme} setTheme={setThemeState} />
+        {/* 🔍 Filtros e botão modo escuro alinhados na mesma linha */}
+        <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
+          <div className="flex flex-1 flex-wrap items-end gap-3">
+            <SearchFilters
+              query={query}
+              setQuery={setQuery}
+              filters={filters}
+              setFilters={setFilters}
+              profiles={perfisComBemEstar}
+            />
+            <DarkModeToggle theme={theme} setTheme={setThemeState} />
+          </div>
         </div>
 
         {loading ? (
