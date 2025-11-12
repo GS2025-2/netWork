@@ -1,16 +1,18 @@
 export default function ProfileCard({ profile, onOpen }) {
-  // Ajuste de onOpen sem o status do ambiente
   const handleOpen = (e) => {
-    e.stopPropagation();
-    onOpen(profile);
-  };
-    
+    e.stopPropagation()
+    onOpen(profile)
+  }
+
   return (
     <article
-      onClick={() => onOpen(profile)}
-      className="profile-card cursor-pointer hover:-translate-y-1"
+      onClick={handleOpen}
+      className="profile-card cursor-pointer hover:-translate-y-1 transition-transform duration-200 bg-white dark:bg-[color:var(--linkedin-card-dark)] rounded-2xl shadow-md p-4 sm:p-6"
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === 'Enter' && handleOpen(e)}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left">
         <img src={profile.foto} alt={profile.nome} className="profile-img" />
         <div>
           <h3 className="profile-name text-lg font-semibold">{profile.nome}</h3>
@@ -21,21 +23,14 @@ export default function ProfileCard({ profile, onOpen }) {
 
       <p className="text-sm mt-3 text-gray-700 dark:text-gray-300 line-clamp-3">{profile.resumo}</p>
 
-      <div className="flex flex-wrap gap-2 mt-4">
+      <div className="flex flex-wrap gap-2 mt-4 justify-center sm:justify-start">
         {(profile.habilidadesTecnicas || []).slice(0, 5).map((s, i) => (
           <span key={i} className="skill">{s}</span>
         ))}
       </div>
-      
-      {/* NENHUM STATUS DO AMBIENTE É EXIBIDO AQUI */}
 
-      <div className="mt-4">
-        <button
-          onClick={handleOpen}
-          className="btn-secondary"
-        >
-          Ver perfil
-        </button>
+      <div className="mt-4 flex justify-center sm:justify-start">
+        <button onClick={handleOpen} className="btn-secondary">Ver perfil</button>
       </div>
     </article>
   )
