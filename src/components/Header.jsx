@@ -10,10 +10,9 @@ export default function Header() {
         </div>
 
         <nav className="flex items-center gap-6 text-sm">
-          <button className="nav-link">Início</button>
-          <button className="nav-link">Conexões</button>
-          <button className="nav-link">Mensagens</button>
-          <button className="nav-link">Vagas</button>
+          <button className="nav-link">Talentos</button>
+          <button className="nav-link">Oportunidades</button>
+          <button className="nav-link">Sobre o Projeto</button>
         </nav>
       </div>
     </header>
